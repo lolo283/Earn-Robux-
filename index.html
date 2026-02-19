@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EarthLike</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #121a2b;
+      --accent: #4f46e5;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, #1f2a44 0%, transparent 60%), var(--bg);
+      color: var(--text);
+    }
+    header {
+      position: sticky; top: 0; backdrop-filter: blur(10px);
+      background: rgba(11,18,32,.7); border-bottom: 1px solid #1f2a44;
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 10;
+    }
+    .logo { font-weight: 900; letter-spacing: .4px; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: #1f2a44; color: var(--muted); font-size: 12px; }
+    main { padding: 16px; max-width: 980px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px; }
+    .card {
+      background: linear-gradient(180deg, #0f1730, #0b1220);
+      border: 1px solid #1f2a44; border-radius: 14px; padding: 14px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.25);
+    }
+    h1 { margin: 8px 0 12px; font-size: 22px; }
+    h2 { margin: 6px 0 10px; font-size: 16px; }
+    .stat { font-size: 28px; font-weight: 800; }
+    .btn {
+      width: 100%; border: 0; border-radius: 10px; padding: 10px 12px;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      color: #020617; font-weight: 800; cursor: pointer;
+    }
+    .btn.secondary { background: #1f2a44; color: var(--text); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mini { font-size: 12px; color: var(--muted); }
+    .game { display: none; }
+    .game.active { display: block; }
+    input, button { outline: none; }
+    input {
+      width: 100%; padding: 10px; border-radius: 10px;
+      border: 1px solid #1f2a44; background: #0b1220; color: var(--text);
+    }
+    footer { padding: 24px 16px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">EarthLike</div>
+    <span class="pill">Mini-jeux & points</span>
+    <span class="pill">Mobile ready</span>
+  </header>
+
+  <main>
+    <h1>Dashboard</h1>
+    <div class="grid">
+      <div class="card">
+        <h2>💰 Points</h2>
+        <div class="stat"><span id="coins">0</span></div>
+        <p class="mini">Ta monnaie du site (virtuelle)</p>
+      </div>
+      <div class="card">
+        <h2>🔥 Streak</h2>
+        <div class="stat"><span id="streak">0</span> j</div>
+        <p class="mini">Joue chaque jour pour garder ta streak</p>
+        <button class="btn secondary" onclick="daily()">Daily +10</button>
+      </div>
+      <div class="card">
+        <h2>🎮 Mini-jeux</h2>
+        <div class="row">
+          <button class="btn secondary" onclick="openGame('clicker')">Clicker</button>
+          <button class="btn secondary" onclick="openGame('guess')">Devine</button>
+        </div>
+        <p class="mini">Joue pour gagner des points</p>
+      </div>
+    </div>
+
+    <!-- Jeux -->
+    <div class="card game" id="clicker">
+      <h2>⚡ Clicker (10 secondes)</h2>
+      <p class="mini">Clique le plus possible. +1 point par clic.</p>
+      <button class="btn" id="clickBtn">Clique !</button>
+      <p>Score: <b id="clickScore">0</b> — Temps: <b id="time">10</b>s</p>
+      <button class="btn secondary" onclick="startClicker()">Démarrer</button>
+    </div>
+
+    <div class="card game" id="guess">
+      <h2>🎯 Devine le nombre (1–10)</h2>
+      <input id="guessInput" type="number" placeholder="Entre un nombre 1–10" />
+      <div class="row">
+        <button class="btn" onclick="playGuess()">Tester</button>
+        <button class="btn secondary" onclick="newSecret()">Nouveau nombre</button>
+      </div>
+      <p id="guessResult" class="mini"></p>
+    </div>
+  </main>
+
+  <footer>
+    Projet perso. Pas affilié à Roblox. Monnaie virtuelle du site.
+  </footer>
+
+  <script>
+    // State
+    let coins = Number(localStorage.getItem("coins") || 0);
+    let streak = Number(localStorage.getItem("streak") || 0);
+    let lastDaily = localStorage.getItem("lastDaily") || "";
+    document.getElementById("coins").innerText = coins;
+    document.getElementById("streak").innerText = streak;
+
+    function save() {
+      localStorage.setItem("coins", coins);
+      localStorage.setItem("streak", streak);
+      localStorage.setItem("lastDaily", lastDaily);
+      document.getElementById("coins").innerText = coins;
+      document.getElementById("streak").innerText = streak;
+    }
+
+    // Daily
+    function daily() {
+      const today = new Date().toDateString();
+      if (lastDaily === today) return alert("Déjà pris aujourd’hui 😅");
+      lastDaily = today;
+      streak += 1;
+      coins += 10;
+      save();
+      alert("Daily +10 points 🔥");
+    }
+
+    // Games UI
+    function openGame(id) {
+      document.querySelectorAll('.game').forEach(g => g.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    // Clicker
+    let clickScore = 0;
+    let timeLeft = 10;
+    let timer = null;
+    const clickBtn = document.getElementById("clickBtn");
+    clickBtn.onclick = () => {
+      if (timeLeft > 0) {
+        clickScore++;
+        document.getElementById("clickScore").innerText = clickScore;
+      }
+    };
+
+    function startClicker() {
+      if (timer) return;
+      clickScore = 0; timeLeft = 10;
+      document.getElementById("clickScore").innerText = 0;
+      document.getElementById("time").innerText = 10;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time").innerText = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer); timer = null;
+          coins += clickScore; // 1 point par clic
+          save();
+          alert("Fini ! +" + clickScore + " points 🎉");
+        }
+      }, 1000);
+    }
+
+    // Guess
+    let secret = Math.floor(Math.random() * 10) + 1;
+    function newSecret() {
+      secret = Math.floor(Math.random() * 10) + 1;
+      document.getElementById("guessResult").innerText = "Nouveau nombre généré 👀";
+    }
+    function playGuess() {
+      const g = Number(document.getElementById("guessInput").value);
+      if (!g || g < 1 || g > 10) return;
+      if (g === secret) {
+        coins += 10; save();
+        document.getElementById("guessResult").innerText = "Bravo ! +10 points 🎉";
+        newSecret();
+      } else {
+        document.getElementById("guessResult").innerText = "Raté 😅 Réessaie";
+      }
+    }
+  </script>
+</body>
+</html>
